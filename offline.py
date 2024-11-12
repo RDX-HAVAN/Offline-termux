@@ -1,67 +1,65 @@
-import datetime
+#!/bin/bash
 
-# ANSI escape codes for colors
-colors = {
-    "red": "\033[31m",
-    "green": "\033[32m",
-    "yellow": "\033[33m",
-    "blue": "\033[34m",
-    "magenta": "\033[35m",
-    "cyan": "\033[36m",
-    "reset": "\033[0m"
+# Setting up variables
+LOGFILE="$HOME/approval_log.txt"
+LOGO="==== APPROVAL SYSTEM ===="  # Placeholder for logo name/title
+
+# Print the logo or system name at the top
+echo "$LOGO"
+echo "========================="
+
+# Function to check if a user is approved
+check_approval() {
+    local username=$1
+    grep -q "$username:approved" $LOGFILE
+    return $?
 }
 
-# Define users with their chosen colors
-users = {
-    "Nadeem": "green",
-    "Ali": "blue",
-    "Sara": "magenta"
-    # Add more users here as needed
+# Function to approve a user
+approve_user() {
+    local username=$1
+    echo "$username:approved" >> $LOGFILE
+    echo "[`date`] $username has been approved." >> $LOGFILE
+    echo "$username is now approved."
 }
 
-# File to store conversation log
-log_file = "multi_user_conversation_log.txt"
+# Function to disapprove a user
+disapprove_user() {
+    local username=$1
+    sed -i "/$username:approved/d" $LOGFILE
+    echo "[`date`] $username has been disapproved." >> $LOGFILE
+    echo "$username is now disapproved."
+}
 
-def log_conversation():
-    while True:
-        # Display available users
-        print("\nAvailable users:")
-        for user in users:
-            print(f"{user} ({users[user]})")
-        
-        # Prompt for username and check if it exists
-        username = input("\nEnter username (or type 'exit' to quit): ")
-        if username.lower() == "exit":
-            print("Conversation logging stopped.")
-            break
-        
-        if username not in users:
-            print("User not found. Please try again.")
-            continue
+# Main menu for the approval system
+echo "1. Approve User"
+echo "2. Disapprove User"
+echo "3. Check Approval Status"
+echo "4. Exit"
+read -p "Choose an option: " option
 
-        # Get user's color
-        user_color = colors[users[username]]
-
-        # Prompt for conversation text
-        user_input = input(f"{user_color}{username}: {colors['reset']}")
-        
-        # Stop logging if user enters "exit"
-        if user_input.lower() == "exit":
-            print("Conversation logging stopped.")
-            break
-
-        # Get current timestamp
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        # Format log entry
-        log_entry = f"[{timestamp}] {username}: {user_input}\n"
-
-        # Save to file
-        with open(log_file, "a") as file:
-            file.write(log_entry)
-
-        # Print to terminal with color
-        print(f"{user_color}{log_entry}{colors['reset']}")
-
-if __name__ == "__main__":
-    log_conversation()
+case $option in
+    1)
+        read -p "Enter username to approve: " username
+        approve_user $username
+        ;;
+    2)
+        read -p "Enter username to disapprove: " username
+        disapprove_user $username
+        ;;
+    3)
+        read -p "Enter username to check status: " username
+        if check_approval $username; then
+            echo "$username is approved."
+        else
+            echo "$username is not approved."
+        fi
+        ;;
+    4)
+        echo "Exiting the approval system."
+        exit 0
+        ;;
+    *)
+        echo "Invalid option. Please try again."
+        ;;
+esac
